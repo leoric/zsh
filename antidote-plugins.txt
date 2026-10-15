@@ -1,0 +1,33 @@
+# Prints a help line reminding you about an alias for the executed command
+djui/alias-tips
+
+# Toggles "sudo" before the current/previous command by pressing [ESC][ESC]
+# inside ohmyzsh/ohmyzsh
+hcgraf/zsh-sudo 
+
+# Automatic terminal and tmux titles based on current location and task.
+jreese/zsh-titles
+
+# Desktop notifications for long-running commands in ZSH
+MichaelAquilina/zsh-auto-notify
+
+# Type p10k configure to access the builtin configuration wizard
+romkatv/powerlevel10k
+
+# Minimal config
+yous/vanilli.sh
+
+# A modified version of oh-my-zsh's plugin colored-man-pages, optimized for solarized dark theme in terminal
+zlsun/solarized-man
+
+# Fish-like fast/unobtrusive autosuggestions for zsh. Suggests commands as you type based on history and completions
+zsh-users/zsh-autosuggestions
+
+# Additional completion definitions
+zsh-users/zsh-completions
+
+# This is a clean-room implementation of the Fish shell's history search feature, where you can type in any part of any command from history and then press chosen keys, such as the UP and DOWN arrows, to cycle through matches
+zsh-users/zsh-history-substring-search
+
+# Fish shell-like syntax highlighting
+zsh-users/zsh-syntax-highlighting

@@ -1,0 +1,237 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Check if zplug is installed
+if [[ ! -d ~/.zplug ]]; then
+  git clone https://github.com/zplug/zplug ~/.zplug
+  source ~/.zplug/init.zsh && zplug update --self
+fi
+
+# Essential
+source ~/.zplug/init.zsh
+
+# export PATH="~/.bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+# export MANPATH="/usr/local/man:$MANPATH"
+
+# Prompt theme settings
+
+# Let zplug manage zplug
+zplug "zplug/zplug"
+# Vanilla shell
+zplug "yous/vanilli.sh"
+# press esc twice to sudo previous command
+zplug "hcgraf/zsh-sudo" 
+
+zplug "marzocchi/zsh-notify"
+zplug "zlsun/solarized-man"
+zplug "djui/alias-tips"
+zplug "jreese/zsh-titles"
+zplug "zsh-users/zsh-completions"
+zplug "zsh-users/zsh-autosuggestions", defer:1
+zplug "zsh-users/zsh-syntax-highlighting", defer:2
+zplug "zsh-users/zsh-history-substring-search", defer:3
+
+# theme
+export TERM="xterm-256color"
+export COLORTERM=truecolor
+#zplug "bhilburn/powerlevel9k", use:powerlevel9k.zsh-theme
+zplug "romkatv/powerlevel10k", as:theme, depth:1
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+       
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+fi
+
+# Install plugins if there are plugins that have not been installed
+if ! zplug check --verbose; then
+  printf "Install? [y/N]: "
+  if read -q; then
+    echo; zplug install
+  fi 
+fi     
+
+# Then, source plugins and add commands to $PATH
+zplug load  #--verbose
+
+# Init jump
+eval "$(jump shell --bind=z)"
+
+# Enable keychain
+if command -v keychain &> /dev/null; then
+  eval `keychain --eval --quiet --agents ssh id_rsa`
+fi
+
+# ZSH history
+setopt append_history
+setopt hist_expire_dups_first
+setopt hist_fcntl_lock
+setopt hist_ignore_all_dups
+setopt hist_lex_words
+setopt hist_reduce_blanks
+setopt hist_save_no_dups
+setopt share_history
+
+export CLICOLOR=1
+export BLOCK_SIZE=human-readable # https://www.gnu.org/software/coreutils/manual/html_node/Block-size.html
+export HISTSIZE=11000
+export SAVEHIST=10000
+export HISTFILE=~/.zsh_history
+
+# AUTOSUGGESTIONS
+if zplug check zsh-users/zsh-autosuggestions; then
+  ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down) # Add history-substring-search-* widgets to list of widgets that clear the autosuggestion
+  ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}") # Remove *-line-or-history widgets from list of widgets that clear the autosuggestion to avoid conflict with history-substring-search-* widgets
+fi
+
+# Bind UP and DOWN arrow keys for subsstring search.
+if zplug check zsh-users/zsh-history-substring-search; then
+  zmodload zsh/terminfo
+  bindkey "$terminfo[kcuu1]" history-substring-search-up
+  bindkey "$terminfo[kcud1]" history-substring-search-down
+fi
+
+
+# You may need to manually set your language environment
+export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+# ssh
+# export SSH_KEY_PATH="~/.ssh/dsa_id"
+# Load fzf
+if [ -f ~/.fzf.zsh ]; then
+  source ~/.fzf.zsh
+
+  # fshow - git commit browser
+  fshow() {
+    git log --graph --color=always \
+      --format="%C(auto)%h%d %s %C(green)%cr%C(reset)" "$@" |
+    fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort \
+      --bind "ctrl-m:execute:
+        (grep -o '[a-f0-9]\{7\}' | head -1 |
+        xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
+        {}
+FZF-EOF"
+  }
+export FZF_DEFAULT_COMMAND='ag -l -g ""' # Use ag as the default source for fzf
+export FZF_DEFAULT_OPTS='--multi'
+fi
+
+# Aliases
+if [ -f ~/.alias.zsh ]; then
+  source ~/.alias.zsh
+fi
+# Composer aliases
+if [ -f ~/.composer.bash ]; then
+  source ~/.composer.bash
+fi
+# Docker aliases
+if [ -f ~/.docker.bash ]; then
+  source ~/.docker.bash
+fi
+if [ -f ~/.docker.zsh ]; then
+  source ~/.docker.zsh
+fi
+# Git aliases
+if [ -f ~/.git.bash ]; then
+  source ~/.git.bash
+fi
+if [ -f ~/.git.zsh ]; then
+  source ~/.git.zsh
+fi
+# Make "blinking" font to actually work
+export GROFF_NO_SGR=1
+
+set umask 002
+
+#export NVM_DIR="$HOME/.nvm"
+#[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+#[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+
+#zsh extensions
+
+autoload -U parseopts
+autoload -U zargs
+autoload -U zcalc
+autoload -U zed
+autoload -U zmv
+export PATH="~/.composer/vendor/bin/:$PATH"
+export PATH="/snap/bin:$PATH"
+
+
+case $TERM in
+#	screen)
+#bindkey "^[[2~" yank
+#bindkey "^[[3~" delete-char
+#bindkey "^@"	backward-delete-char
+#bindkey "^[[5~" up-line-or-history
+#bindkey "^[[6~" down-line-or-history
+#bindkey "^[[1~" beginning-of-line
+#bindkey "^[[4~" end-of-line
+#bindkey "^[[A" up-line-or-search ## up arrow for back-history-search
+#bindkey "^[[B" down-line-or-search ## down arrow for fwd-history-search
+#bindkey " " magic-space ## do history expansion on space
+#;;
+
+#        linux)
+#bindkey "^[[2~" yank
+#bindkey "^[[3~" delete-char
+#bindkey "^[[5~" up-line-or-history
+#bindkey "^[[6~" down-line-or-history
+#bindkey "^[[1~" beginning-of-line
+#bindkey "^[[4~" end-of-line
+#bindkey "^[[A" up-line-or-search ## up arrow for back-history-search
+#bindkey "^[[B" down-line-or-search ## down arrow for fwd-history-search
+#;;
+
+#	rxvt-unicode|(dt|k|a|E)term)
+#bindkey "^[[2~" yank
+#bindkey "^[[3~" delete-char
+#bindkey "^[[5~" up-line-or-history
+#bindkey "^[[6~" down-line-or-history
+#bindkey "^[[7~" beginning-of-line
+#bindkey "^[[8~" end-of-line
+#bindkey "^[[A" up-line-or-search ## up arrow for back-history-search
+#bindkey "^[[B" down-line-or-search ## down arrow for fwd-history-search
+#;;
+
+	*xterm*)
+#bindkey "^[b" backward-word
+#bindkey "^[f" forward-word
+#bindkey "^[[2~" yank
+bindkey "^[[3~" delete-char
+#bindkey "^[[5~" up-line-or-history
+#bindkey "^[[6~" down-line-or-history
+#bindkey "^A" beginning-of-line
+#bindkey "^E" end-of-line
+bindkey "^[a" beginning-of-line
+bindkey "^[e" end-of-line
+bindkey "^[[1;5D" beginning-of-line
+bindkey "^[[1;6D" end-of-line
+bindkey "^[[A" up-line-or-search ## up arrow for back-history-search
+bindkey "^[[B" down-line-or-search ## down arrow for fwd-history-search
+bindkey '^U' backward-kill-line
+bindkey '^[e' redo
+;;
+esac
+
+export HOMEBREW_NO_AUTO_UPDATE=1
+
+export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
