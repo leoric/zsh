@@ -3,10 +3,34 @@ png() {
     dwebp "$1" -o "$(basename "$1" .webp).png"
 }
 
+function manage_pro_venv() {
+    if [[ "$PWD" != "$PRO_PROJECT_ROOT" && "$PWD" != "$PRO_PROJECT_ROOT"/* ]]; then
+        if [[ "${VIRTUAL_ENV:-}" == "$PRO_VENV" ]]; then
+            deactivate
+        fi
+        return
+    fi
+
+    if find "$PWD" \
+        \( -name '.*' -o -name '__pycache__' -o -name 'node_modules' -o -name '.venv' -o -name 'venv' \) -prune \
+        -o -type f -name '*.py' -print -quit 2>/dev/null | grep -q .; then
+        if [[ "${VIRTUAL_ENV:-}" != "$PRO_VENV" ]]; then
+            if (( $+functions[deactivate] )); then
+                deactivate
+            fi
+            source "$PRO_VENV/bin/activate"
+        fi
+    else
+        if [[ "${VIRTUAL_ENV:-}" == "$PRO_VENV" ]]; then
+            deactivate
+        fi
+    fi
+}
+
 vibe_advance() {
     # Emulate standard zsh behavior and isolate options
     emulate -L zsh
-    
+
     local VERSION_TYPE="minor"
     local MANUAL_VERSION=""
     local NEW_VERSION=""
@@ -47,11 +71,11 @@ vibe_advance() {
 
         local -a m_parts
         m_parts=(${(s:.:)MANUAL_VERSION})
-        
+
         local m_major=${m_parts[1]:-0}
         local m_minor=${m_parts[2]:-0}
         local m_patch=${m_parts[3]:-0}
-        
+
         MANUAL_VERSION="${m_major}.${m_minor}.${m_patch}"
 
         if git rev-parse "v$MANUAL_VERSION" >/dev/null 2>&1 || \
@@ -60,7 +84,7 @@ vibe_advance() {
             echo "Error: Version $MANUAL_VERSION already exists in Git history (as a tag or commit subject)!"
             return 1
         fi
-        
+
         NEW_VERSION="$MANUAL_VERSION"
     fi
 

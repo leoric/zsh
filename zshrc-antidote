@@ -1,7 +1,14 @@
-# Enable Powerlevel10k instant prompt
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# LLM
+export GEMINI_API_KEY=""
+export GEMINI_MODEL="gemini-3.6-flash"
+export GO_GEMINI_MODEL="gemini-3.6-flash"
+
+export ANTHROPIC_MODEL="claude-opus-5"
+export ANTHROPIC_BASE_URL="co.agentrouter.org"
+export ANTHROPIC_AUTH_TOKEN=""
+
+export HF_TOKEN=""
+# End of LLM
 
 # Antidote plugin manager
 if [[ ! -d ~/.antidote ]]; then
@@ -18,6 +25,9 @@ autoload -U zmv
 autoload -Uz compinit
 compinit -C
 
+# Correct typos
+setopt correct
+
 # Enable menu-style completion
 zstyle ':completion:*' complete-options true
 zstyle ':completion:*' menu select=2
@@ -27,6 +37,11 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 zmodload zsh/complist
+
+# Enable Powerlevel10k instant prompt
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
 
 # Powerlevel10k theme
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
@@ -65,7 +80,7 @@ ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-se
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
 
 # Prioritize history for autosuggestions
-export ZSH_AUTOSUGGEST_STRATEGY=(history completion) 
+export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
 # Bind UP/DOWN for substring search
 zmodload zsh/terminfo
@@ -93,11 +108,10 @@ FZF-EOF"
   export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
 fi
 
-
-# Aliases and other sources
-#for file in ~/.alias.zsh ~/.composer.bash ~/.converters.zsh ~/.docker.bash ~/.docker.zsh ~/.git.bash ~/.git.zsh ~/.ffmpeg.zsh ~/.functions.zsh; do
-#  [ -f "$file" ] && source "$file"
-#done
+# Python venv auto-activation setup
+# should be defined before functions are loaded
+PRO_PROJECT_ROOT="$HOME/pro"
+PRO_VENV="$HOME/py.env"
 
 # Aliases and other sources
 if [ -d ~/.zsh_includes ]; then
@@ -111,8 +125,10 @@ case $TERM in
   *xterm*)
     bindkey "^[[3~" delete-char
     bindkey "^[a" beginning-of-line
-    bindkey "^[e" end-of-line
+    bindkey "^[^B" beginning-of-line
     bindkey "^[[1;5D" beginning-of-line
+    bindkey "^[e" end-of-line
+    bindkey "^[^F" end-of-line
     bindkey "^[[1;6D" end-of-line
     bindkey "^[[A" up-line-or-search
     bindkey "^[[B" down-line-or-search
@@ -140,8 +156,6 @@ export TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S'  # Better time formatting
 
 export PATH=$PATH:~/.spoofdpi/bin:~/.local/bin
 
-#source ~/py.env/bin/activate
-
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
 # Unset color overrides only if eza theme exists and is non-empty
@@ -151,14 +165,9 @@ if [ -s "$HOME/.config/eza/theme.yml" ]; then
     unset EXA_COLORS
 fi
 
-# LLM
-export GEMINI_API_KEY=""
-export GEMINI_MODEL="gemini-3.6-flash"
-export GO_GEMINI_MODEL="gemini-3.6-flash"
-
-export ANTHROPIC_MODEL="claude-opus-5"
-export ANTHROPIC_BASE_URL="co.agentrouter.org"
-export ANTHROPIC_AUTH_TOKEN=""
-
-export HF_TOKEN=""
-# End of LLM
+# Conditional autoload of python venv in some folders
+if (( $+functions[manage_pro_venv] )); then
+    autoload -Uz add-zsh-hook
+    add-zsh-hook chpwd manage_pro_venv
+    manage_pro_venv
+fi
