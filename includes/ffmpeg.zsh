@@ -33,6 +33,63 @@ ff1() {
     "${cmd[@]}"
 }
 
+# fb <file> [target] [-p percent]
+# Prints the target video bitrate in kbps (default: 65% of source).
+# Target short side defaults to 720. Never upscales.
+# Short side <= target:  "nnn kbps"
+# Short side >  target:  "nnn kbps" (scaled to target)
+#                        "mmm kbps (WxH)" (original)
+fb() {
+    local input="$1" target=720 pct=65 w h br
+    shift
+    while (( $# )); do
+        case "$1" in
+            -p) pct="$2"; shift ;;
+            <->) target="$1" ;;
+        esac
+        shift
+    done
+
+    if [[ -z "$input" || ! -f "$input" ]]; then
+        echo "fb: usage: fb <file> [target] [-p percent]" >&2
+        return 1
+    fi
+
+    local probe
+    probe=$(ffprobe -v error -select_streams v:0 \
+        -show_entries stream=width,height,bit_rate \
+        -of default=nw=1 "$input")
+
+    w=$(awk -F= '$1=="width"{print $2; exit}' <<< "$probe")
+    h=$(awk -F= '$1=="height"{print $2; exit}' <<< "$probe")
+    br=$(awk -F= '$1=="bit_rate"{print $2; exit}' <<< "$probe")
+
+    # Fall back to container bitrate (mkv/webm etc.)
+    if [[ ! "$br" =~ ^[0-9]+$ ]]; then
+        br=$(ffprobe -v error -show_entries format=bit_rate -of default=nw=1:nk=1 "$input")
+    fi
+
+    if [[ ! "$br" =~ ^[0-9]+$ || ! "$w" =~ ^[0-9]+$ || ! "$h" =~ ^[0-9]+$ ]]; then
+        echo "fb: couldn't read width/height/bitrate" >&2
+        return 1
+    fi
+
+    awk -v w="$w" -v h="$h" -v b="$br" -v p="$pct" -v t="$target" 'BEGIN {
+        short = (w < h) ? w : h
+        k0 = int(b * (p / 100) / 1000)
+        if (k0 < 100) k0 = 100
+
+        if (short > t) {
+            r  = t / short
+            k1 = int(b * (p / 100) * r * r / 1000)
+            if (k1 < 100) k1 = 100
+            printf "%d kbps\n%d kbps (%dx%d)\n", k1, k0, w, h
+        } else {
+            printf "%d kbps\n", k0
+        }
+    }'
+}
+
 # ffbr <file> [720] [-p percent]
 # Prints the target video bitrate in kbps (default: 65% of source).
 # With 720, the short side is capped at 720 (width if vertical, height otherwise),
